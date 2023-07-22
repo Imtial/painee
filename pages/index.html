@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painee</title>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+</head>
+<body>
+    <form id="target-form">
+        <label for="target-input">Target</label>
+        <input type="text" id="target-input" name="target-input" required>
+
+        <label for="until-input">Until</label>
+        <input type="datetime-local" id="until-input" name="until-input" required>
+
+        <input type="submit" value="Submit">
+    </form>
+</body>
+<script>
+    $(document).ready(function () {
+    $("#target-form").on("submit", function (event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        // Create JSON object with form data
+        const formData = {
+            target: $("#target-input").val(),
+            until: new Date($("#until-input").val()).toISOString()
+        };
+
+        // Perform POST request to the server with the JSON data
+        $.ajax({
+            url: "saveTarget",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(formData),
+            success: function (data) {
+                console.log("Server response:", data);
+                // Handle server response here
+            },
+            error: function (error) {
+                console.error("Error submitting form:", error);
+                // Handle error here
+            },
+        });
+    });
+});
+</script>
+</html>
