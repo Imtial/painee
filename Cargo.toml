@@ -17,3 +17,6 @@ futures = "0.3"
 lazy_static = "1.4"
 chrono = { version = "0.4", features = ["serde"] }
 env_logger = "0.9"
+sqlx = { version = "0.7", features = ["runtime-async-std-native-tls", "postgres", "uuid", "chrono"] }
+uuid = { version = "1.4", features = ["serde", "v4"] }
+dotenv = "0.15.0"

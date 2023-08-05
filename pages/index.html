@@ -5,26 +5,132 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painee</title>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 4px;
+            padding: 4px;
+        }
+        form {
+            padding: 4px;
+        }
+        button {
+            font-size: large;
+            padding: 0.25rem;
+        }
+        input {
+            font-size: medium;
+            padding: 0.5rem;
+        }
+        .w-100 {
+            width: -webkit-calc(100% - 2px);
+            width: -moz-calc(100% - 2px);
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            -o-box-sizing: border-box;
+            -ms-box-sizing: border-box;
+            box-sizing: border-box;
+        }
+        .mh {
+            margin: 0px 4px 0px 4px;
+        }
+        .mv {
+            margin: 4px 0px 4px 0px;
+        }
+    </style>
 </head>
 <body>
-    <form id="target-form">
-        <label for="target-input">Target</label>
-        <input type="text" id="target-input" name="target-input" required>
+    <div class="container">
+        <form id="target-form">
+            <input
+                class="w-100"
+                type="text"
+                id="target-input"
+                name="target-input"
+                placeholder="Target"
+                maxlength="100"
+                required
+            >
+        
+            <ol id="remedy-ol">
+                <li id="remedy-item-template">
+                    <input
+                        class="w-100"
+                        type="text"
+                        name="condition-input"
+                        placeholder="Condition"
+                        maxlength="100"
+                        required
+                    >
+                    <input
+                        class="w-100 mv"
+                        type="text"
+                        name="remedy-input"
+                        placeholder="Remedy"
+                        maxlength="100"
+                        required
+                    >
+                    <div class="mv">
+                        <button type="button" class="delete-remedy-btn">Delete</button>
+                    </div>
+                </li>
+            </ol>
 
-        <label for="until-input">Until</label>
-        <input type="datetime-local" id="until-input" name="until-input" required>
-
-        <input type="submit" value="Submit">
-    </form>
+            <button type="button" id="add-remedy-btn">Add Remedy</button>
+            <br>
+            
+            <input
+                class="w-100 mv"
+                type="text" name="penalty-input"
+                placeholder="Penalty"
+                id="penalty-input"
+                maxlength="100"
+            >
+            <br>
+    
+            <label for="until-input">Until</label>
+            <input
+                class="w-100"
+                type="datetime-local"
+                id="until-input"
+                name="until-input"
+                required
+            >
+    
+            <button class="w-100 mv btn-primary" type="submit">Submit</button>
+        </form>
+    </div>
 </body>
 <script>
-    $(document).ready(function () {
+$(document).ready(function () {
+    const remedyItemTemplate = $("#remedy-item-template").clone();
+    remedyItemTemplate.removeAttr('id');
+    $("#add-remedy-btn").click(function() {
+        $("#remedy-ol").append(remedyItemTemplate.clone());
+    });
+
+    $(document).on("click", ".delete-remedy-btn", function () {
+        $(this).closest("li").remove();
+    });
     $("#target-form").on("submit", function (event) {
         event.preventDefault(); // Prevent the default form submission
 
         // Create JSON object with form data
         const formData = {
             target: $("#target-input").val(),
+            remedies: $('#remedy-ol li').map(function () {
+                return {
+                    "condition": $(this).find('input[name="condition-input"]').val(),
+                    "remedy": $(this).find('input[name="remedy-input"]').val()
+                };
+            }).get(),
+            penalty: $("#penalty-input").val(),
             until: new Date($("#until-input").val()).toISOString()
         };
 
