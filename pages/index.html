@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painee</title>
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
     <style>
         body {
             display: flex;
@@ -43,74 +42,77 @@
         .mv {
             margin: 4px 0px 4px 0px;
         }
-    </style>
+        </style>
 </head>
 <body>
     <div class="container">
         <form id="target-form">
             <input
-                class="w-100"
-                type="text"
-                id="target-input"
-                name="target-input"
-                placeholder="Target"
-                maxlength="100"
-                required
+            class="w-100"
+            type="text"
+            id="target-input"
+            name="target"
+            placeholder="Target"
+            maxlength="100"
+            required
             >
-        
+            
             <ol id="remedy-ol">
                 <li id="remedy-item-template">
                     <input
-                        class="w-100"
-                        type="text"
-                        name="condition-input"
-                        placeholder="Condition"
-                        maxlength="100"
-                        required
+                    class="w-100"
+                    type="text"
+                    name="condition"
+                    placeholder="Condition"
+                    maxlength="100"
+                    required
                     >
                     <input
-                        class="w-100 mv"
-                        type="text"
-                        name="remedy-input"
-                        placeholder="Remedy"
-                        maxlength="100"
-                        required
+                    class="w-100 mv"
+                    type="text"
+                    name="remedy"
+                    placeholder="Remedy"
+                    maxlength="100"
+                    required
                     >
                     <div class="mv">
                         <button type="button" class="delete-remedy-btn">Delete</button>
                     </div>
                 </li>
             </ol>
-
+            
             <button type="button" id="add-remedy-btn">Add Remedy</button>
             <br>
             
             <input
-                class="w-100 mv"
-                type="text" name="penalty-input"
-                placeholder="Penalty"
-                id="penalty-input"
-                maxlength="100"
+            class="w-100 mv"
+            type="text"
+            name="penalty"
+            placeholder="Penalty"
+            id="penalty-input"
+            maxlength="100"
             >
             <br>
-    
+            
             <label for="until-input">Until</label>
             <input
-                class="w-100"
-                type="datetime-local"
-                id="until-input"
-                name="until-input"
-                required
+            class="w-100"
+            type="datetime-local"
+            name="until"
+            id="until-input"
+            required
             >
-    
+            
             <button class="w-100 mv btn-primary" type="submit">Submit</button>
         </form>
     </div>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
 </body>
 <script>
 $(document).ready(function () {
     const remedyItemTemplate = $("#remedy-item-template").clone();
     remedyItemTemplate.removeAttr('id');
+    remedyItemTemplate.find("input").val("");
     $("#add-remedy-btn").click(function() {
         $("#remedy-ol").append(remedyItemTemplate.clone());
     });
@@ -126,8 +128,8 @@ $(document).ready(function () {
             target: $("#target-input").val(),
             remedies: $('#remedy-ol li').map(function () {
                 return {
-                    "condition": $(this).find('input[name="condition-input"]').val(),
-                    "remedy": $(this).find('input[name="remedy-input"]').val()
+                    "condition": $(this).find('input[name="condition"]').val(),
+                    "remedy": $(this).find('input[name="remedy"]').val()
                 };
             }).get(),
             penalty: $("#penalty-input").val(),
@@ -136,7 +138,7 @@ $(document).ready(function () {
 
         // Perform POST request to the server with the JSON data
         $.ajax({
-            url: "saveTarget",
+            url: "save-target",
             type: "POST",
             contentType: "application/json",
             data: JSON.stringify(formData),

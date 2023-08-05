@@ -1,12 +1,13 @@
-use actix_web::{get, post, App, HttpResponse, HttpServer, Responder, web::Json, middleware::Logger};
+use actix_web::{get, post, App, HttpResponse, HttpServer, Responder, web::{Json, Data}, middleware::Logger};
 use chrono::{DateTime, Utc};
+use sqlx::{FromRow, Pool, Postgres, postgres::PgPoolOptions};
 use walkdir::WalkDir;
 use dotenv::dotenv;
 use std::{error::Error, collections::HashMap};
 use html_minifier::minify;
 use serde::{Serialize, Deserialize};
-use handlebars::Handlebars;
-use serde_json::json;
+// use handlebars::Handlebars;
+// use serde_json::json;
 
 #[macro_use]
 extern crate lazy_static;
@@ -62,16 +63,20 @@ fn get_from_cache_or_file(filename: &str) ->Result<String, Box<dyn Error>> {
     }
 }
 
+pub struct AppState {
+    db: Pool<Postgres>
+}
+
 #[get("/")]
-async fn hello() -> impl Responder {
+async fn index() -> impl Responder {
     let content = get_from_cache_or_file("index.html").unwrap();
     HttpResponse::Ok().body(content)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct ConditionalRemedy {
-    condition: String,
-    remedy: String
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ConditionalRemedy {
+    pub condition: String,
+    pub remedy: String
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -82,20 +87,88 @@ struct TargetData {
     until: DateTime<Utc>
 }
 
-#[post("/saveTarget")]
-async fn save_target(req_body: Json<TargetData>) -> impl Responder {
-    HttpResponse::Ok().body(serde_json::to_string(&req_body).unwrap())
+// impl TargetData {
+//     fn to_entity(&self) -> OathEntity {
+//         OathEntity {
+//             id: None,
+//             target: self.target.clone(),
+//             remedies: types::Json(self.remedies.clone()),
+//             penalty: self.penalty.clone(),
+//             until: self.until
+//         }
+//     }
+// }
+
+#[derive(Debug, FromRow, Serialize, Deserialize)]
+pub struct CreateOathSchema {
+    pub id: Option<i32>,
+    pub target: String,
+    pub conditional_remedies: sqlx::types::JsonValue,
+    pub penalty: String,
+    pub until: DateTime<Utc>
+}
+
+#[post("/save-target")]
+async fn save_target(
+    req_body: Json<TargetData>,
+    data: Data<AppState>
+) -> impl Responder {
+    let target_data = &req_body.0;
+    let query_result = sqlx::query_as!(
+        CreateOathSchema,
+        "INSERT INTO oath (target, conditional_remedies, penalty, \"until\")
+        VALUES ($1, $2, $3, $4)
+        RETURNING
+            id,
+            target,
+            conditional_remedies,
+            penalty,
+            \"until\";",
+        target_data.target,
+        serde_json::json!(target_data.remedies),
+        target_data.penalty,
+        target_data.until
+    )
+    .fetch_one(&data.db)
+    .await;
+
+    match query_result {
+        Ok(oath) => {
+            HttpResponse::Ok().body(serde_json::to_string(&oath).unwrap())
+        }
+        Err(e) => {
+            HttpResponse::BadRequest().body(e.to_string())
+        }
+    }
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
-    env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
-    HttpServer::new(|| {
+    env_logger::init_from_env(env_logger::Env::default().default_filter_or("debug"));
+
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let pool = match PgPoolOptions::new()
+        .max_connections(10)
+        .connect(&database_url)
+        .await
+    {
+        Ok(pool) => {
+            println!("✅Connection to the database is successful!");
+            pool
+        }
+        Err(err) => {
+            println!("🔥 Failed to connect to the database: {:?}", err);
+            std::process::exit(1);
+        }
+    };
+
+    HttpServer::new(move || {
         App::new()
+            .app_data(actix_web::web::Data::new(AppState { db: pool.clone() }))
             .wrap(Logger::default())
-            .service(hello)
+            .service(index)
             .service(save_target)
     })
     .bind(("127.0.0.1", 12345))?
