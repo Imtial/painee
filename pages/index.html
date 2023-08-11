@@ -10,6 +10,7 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
         }
         .container {
             width: 80%;
@@ -27,6 +28,10 @@
             font-size: medium;
             padding: 0.5rem;
         }
+        select {
+            font-size: medium;
+            padding: 0.5em;
+        }
         .w-100 {
             width: -webkit-calc(100% - 2px);
             width: -moz-calc(100% - 2px);
@@ -41,6 +46,17 @@
         }
         .mv {
             margin: 4px 0px 4px 0px;
+        }
+        .inp-s {
+            min-width: 2em;
+            max-width: 4em;
+        }
+        .flex-center-h {
+            display: flex;
+            align-items: center;
+        }
+        .flex-grow {
+            flex-grow: 1;
         }
         </style>
 </head>
@@ -60,21 +76,37 @@
             <ol id="remedy-ol">
                 <li id="remedy-item-template">
                     <input
-                    class="w-100"
-                    type="text"
-                    name="condition"
-                    placeholder="Condition"
-                    maxlength="100"
-                    required
+                        class="w-100"
+                        type="text"
+                        name="condition"
+                        placeholder="If foo happens..."
+                        maxlength="100"
+                        required
                     >
-                    <input
-                    class="w-100 mv"
-                    type="text"
-                    name="remedy"
-                    placeholder="Remedy"
-                    maxlength="100"
-                    required
-                    >
+                    <div class="w-100 flex-center-h">
+                        <input
+                            class="mv flex-grow"
+                            type="text"
+                            name="remedy-statement"
+                            placeholder="Do bar"
+                            maxlength="100"
+                            style="min-width: 4em;"
+                            required
+                        >
+                        <input
+                            type="number"
+                            name="remedy-n"
+                            class="mh inp-s"
+                            placeholder="N"
+                        >
+                        <select name="remedy-unit">
+                            <option value="" selected disabled hidden>Unit</option>
+                            <!-- {{#each units}} -->
+                            <!-- <option value="{{value}}">{{label}}</option> -->
+                            <!-- {{/each}} -->
+                            <option value="Times">Times</option>
+                        </select>
+                    </div>
                     <div class="mv">
                         <button type="button" class="delete-remedy-btn">Delete</button>
                     </div>
@@ -85,25 +117,25 @@
             <br>
             
             <input
-            class="w-100 mv"
-            type="text"
-            name="penalty"
-            placeholder="Penalty"
-            id="penalty-input"
-            maxlength="100"
+                class="w-100 mv"
+                type="text"
+                name="penalty"
+                placeholder="Penalty"
+                id="penalty-input"
+                maxlength="100"
             >
             <br>
             
             <label for="until-input">Until</label>
             <input
-            class="w-100"
-            type="datetime-local"
-            name="until"
-            id="until-input"
-            required
+                class="w-100"
+                type="datetime-local"
+                name="until"
+                id="until-input"
+                required
             >
             
-            <button class="w-100 mv btn-primary" type="submit">Submit</button>
+            <button class="w-100 mv" type="submit">Submit</button>
         </form>
     </div>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
@@ -127,9 +159,12 @@ $(document).ready(function () {
         const formData = {
             target: $("#target-input").val(),
             remedies: $('#remedy-ol li').map(function () {
+                const unit = $(this).find("[name='remedy-unit'] :selected").val();
+                const n = $(this).find("input[name='remedy-n']").val();
                 return {
-                    "condition": $(this).find('input[name="condition"]').val(),
-                    "remedy": $(this).find('input[name="remedy"]').val()
+                    "condition": $(this).find("input[name='condition']").val(),
+                    "statement": $(this).find("input[name='remedy-statement']").val(),
+                    ...(unit && n && { "unit": [unit, Number(n)] })
                 };
             }).get(),
             penalty: $("#penalty-input").val(),
