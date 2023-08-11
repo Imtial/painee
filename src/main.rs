@@ -1,10 +1,26 @@
-use actix_web::{get, post, App, HttpResponse, HttpServer, Responder, web::{Json, Data, self}, middleware::Logger};
+use actix_files::NamedFile;
+use actix_web::{
+    get,
+    post,
+    App,
+    HttpResponse,
+    HttpServer,
+    Responder,
+    web::{
+        Json as WebJson,
+        Path as WebPath,
+        Data,
+        self
+    },
+    middleware::Logger,
+    Result as WebResult, HttpRequest
+};
 use chrono::{DateTime, NaiveDate, Utc};
 use sqlx::{FromRow, Pool, Postgres, postgres::PgPoolOptions};
 use walkdir::WalkDir;
 use dotenv::dotenv;
-use log::{debug};
-use std::{error::Error, collections::HashMap};
+use log::debug;
+use std::{error::Error, collections::HashMap, io::Result as IOResult, path::PathBuf};
 use html_minifier::minify;
 use serde::{Serialize, Deserialize, Serializer, Deserializer};
 use handlebars::Handlebars;
@@ -25,6 +41,7 @@ struct Remedy {
 
 fn initialize_cache() -> Result<HashMap<String, String>, Box<dyn Error>> {
     let filenames = get_filenames("pages")?;
+    debug!("Cached Files: {:?}", filenames);
 
     let mut file_contents = HashMap::new();
 
@@ -63,7 +80,13 @@ fn get_from_cache_or_file(filename: &str) ->Result<String, Box<dyn Error>> {
     let fullpath = format!("{}{}", "pages/", filename);
 
     if env == "production" {
-        Ok(FILE_CACHE.get(&fullpath).unwrap().to_owned())
+        Ok(FILE_CACHE
+            .get(&fullpath)
+            .unwrap_or(
+                &get_file_content(&fullpath)?
+            )
+            .to_owned()
+        )
     }
     else {
         get_file_content(&fullpath)
@@ -78,6 +101,25 @@ pub struct AppState {
 async fn index() -> impl Responder {
     let content = get_from_cache_or_file("index.html").unwrap();
     HttpResponse::Ok().body(content)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct StaticResource {
+    directory: String,
+    filename: String
+}
+
+#[get(r#"/{directory:assets|styles}/{filename:.*[\.css|\.png|\.ico|\.webmanifest]}"#)]
+async fn styles(resource: WebPath<StaticResource>) -> WebResult<NamedFile> {
+    debug!("path: {:?}", &resource);
+    let mut path = PathBuf::from(&resource.directory);
+    path.push(
+        &resource.filename
+        .parse::<PathBuf>()
+        .unwrap()
+    );
+    
+    Ok(NamedFile::open(path)?)
 }
 
 #[derive(Debug, Clone)]
@@ -191,7 +233,7 @@ pub struct OathSchema {
 #[post("/save-target")]
 // async fn save_target(req: String) -> impl Responder {
 async fn save_target(
-    req_body: Json<OathModel>,
+    req_body: WebJson<OathModel>,
     data: Data<AppState>
 ) -> impl Responder {
     let oath_model = &req_body.0;
@@ -293,11 +335,17 @@ async fn get_all_oaths_for_user(path: web::Path<Option<i32>>) -> impl Responder 
 }
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> IOResult<()> {
     dotenv().ok();
 
     env_logger::init_from_env(env_logger::Env::default().default_filter_or("debug"));
 
+    let app_url = std::env::var("APP_URL").expect("APP_URL must be set");
+    let app_port =
+        std::env::var("APP_PORT")
+        .map_err(|_| "APP_PORT must be set")
+        .and_then(|p| p.parse::<u16>().map_err(|_| "APP_PORT is not a positive integer"))
+        .expect("APP_PORT is not valid");
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let pool = match PgPoolOptions::new()
         .max_connections(10)
@@ -319,10 +367,11 @@ async fn main() -> std::io::Result<()> {
             .app_data(actix_web::web::Data::new(AppState { db: pool.clone() }))
             .wrap(Logger::default())
             .service(index)
+            .service(styles)
             .service(save_target)
             .service(get_all_oaths_for_user)
     })
-    .bind(("127.0.0.1", 12345))?
+    .bind((app_url, app_port))?
     .run()
     .await
 }
