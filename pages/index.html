@@ -19,10 +19,8 @@
         Painee
         </div>
         <div class="app-links">
-        <a href="#" class="app-link">Home</a>
-        <a href="#" class="app-link">About</a>
-        <a href="#" class="app-link">Services</a>
-        <a href="#" class="app-link">Contact</a>
+        <a href="#" class="app-link">Create</a>
+        <a href="/oath" class="app-link">Oaths</a>
         </div>
     </div>
     <div class="container">
@@ -35,6 +33,14 @@
             placeholder="Target"
             maxlength="100"
             required
+            >
+            <input
+                class="w-100 mv"
+                type="text"
+                name="penalty"
+                placeholder="Penalty"
+                id="penalty-input"
+                maxlength="100"
             >
             
             <ol id="remedy-ol">
@@ -65,10 +71,9 @@
                         >
                         <select name="remedy-unit">
                             <option value="" selected disabled hidden>Unit</option>
-                            <!-- {{#each units}} -->
-                            <!-- <option value="{{value}}">{{label}}</option> -->
-                            <!-- {{/each}} -->
-                            <option value="Times">Times</option>
+                            {{#each units}}
+                            <option value="{{this}}">{{this}}</option>
+                            {{/each}}
                         </select>
                     </div>
                     <div class="mv">
@@ -78,27 +83,38 @@
             </ol>
             
             <button type="button" id="add-remedy-btn">Add Remedy</button>
-            <br>
             
-            <input
-                class="w-100 mv"
-                type="text"
-                name="penalty"
-                placeholder="Penalty"
-                id="penalty-input"
-                maxlength="100"
-            >
-            <br>
-            
-            <label for="until-input">Until</label>
-            <input
-                class="w-100"
-                type="datetime-local"
-                name="until"
-                id="until-input"
-                required
-            >
-            
+            <div class="col-2 mv">
+                <div class="col flex-grow">
+                    <label for="starts-at-input">Starts at</label>
+                    <input
+                        class="w-100"
+                        type="datetime-local"
+                        name="until"
+                        id="starts-at-input"
+                        required
+                    >
+                </div>
+                <div class="col flex-grow">
+                    <label for="ends-at-input">Ends at</label>
+                    <input
+                        class="w-100"
+                        type="datetime-local"
+                        name="until"
+                        id="ends-at-input"
+                        required
+                    >
+                </div>
+                <div class="col flex-no-grow">
+                    <label for="ends-at-alias-input">Alias</label>
+                    <select name="ends-at-alias-input" id="ends-at-alias-input" required>
+                        <option value="Ends at">Ends at</option>
+                        <option value="Until">Until</option>
+                        <option value="Deadline">Deadline</option>
+                    </select>
+                </div>
+            </div>
+
             <button class="w-100 mv" type="submit">Submit</button>
         </form>
     </div>
@@ -106,6 +122,13 @@
 </body>
 <script>
 $(document).ready(function () {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    now.setSeconds(null);
+    now.setMilliseconds(null);
+    const localISOTime = now.toISOString().slice(0, -1);
+    $("#starts-at-input").val(localISOTime);
+
     const remedyItemTemplate = $("#remedy-item-template").clone();
     remedyItemTemplate.removeAttr('id');
     remedyItemTemplate.find("input").val("");
@@ -116,6 +139,11 @@ $(document).ready(function () {
     $(document).on("click", ".delete-remedy-btn", function () {
         $(this).closest("li").remove();
     });
+
+    $("#ends-at-alias-input").on("change", function () {
+        $("label[for='ends-at-input']").text($(this).val());
+    });
+
     $("#target-form").on("submit", function (event) {
         event.preventDefault(); // Prevent the default form submission
 
@@ -132,7 +160,9 @@ $(document).ready(function () {
                 };
             }).get(),
             penalty: $("#penalty-input").val(),
-            until: new Date($("#until-input").val()).toISOString()
+            starts_at: new Date($("#starts-at-input").val()).toISOString(),
+            ends_at: new Date($("#starts-at-input").val()).toISOString(),
+            ends_at_alias: $("#ends-at-alias-input").val()
         };
 
         // Perform POST request to the server with the JSON data
@@ -142,8 +172,7 @@ $(document).ready(function () {
             contentType: "application/json",
             data: JSON.stringify(formData),
             success: function (data) {
-                console.log("Server response:", data);
-                // Handle server response here
+                window.location = "/oath";
             },
             error: function (error) {
                 console.error("Error submitting form:", error);

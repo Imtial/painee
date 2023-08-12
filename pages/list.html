@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link rel="stylesheet" href="/styles/common.css">
+        <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+        <link rel="manifest" href="/assets/site.webmanifest">
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Painee</title>
+    </head>
+<body>
+    <div class="app-bar">
+        <div class="app-icon">
+        <img src="/assets/favicon-32x32.png" alt="App Icon" width="24" height="24">
+        </div>
+        <div class="app-title">
+        Painee
+        </div>
+        <div class="app-links">
+        <a href="/" class="app-link">Create</a>
+        <a href="#" class="app-link">Oaths</a>
+        </div>
+    </div>
+    <div class="container">
+        {{#unless this}}
+        <h1 style="color: red;">No Oath Found!</h1>
+        {{else}}
+        {{#each this}}
+        <span class="oath-created">{{readable_date created_at}}</span>
+        <div class="oath-target">{{target}}</div>
+        <span>Or</span>
+        <div class="oath-penalty">{{penalty}}</div>
+        {{#if is_ongoing}}
+        <div class="countdown">
+            <div class="countdown-box">
+                <div class="countdown-number" id="days-{{id}}">{{remaining.d}}</div>
+                <div class="countdown-label">Days</div>
+            </div>
+            <div class="countdown-box">
+                <div class="countdown-number" id="hours-{{id}}">{{remaining.h}}</div>
+                <div class="countdown-label">Hours</div>
+            </div>
+            <div class="countdown-box">
+                <div class="countdown-number" id="minutes-{{id}}">{{remaining.m}}</div>
+                <div class="countdown-label">Minutes</div>
+            </div>
+            <div class="countdown-box">
+                <div class="countdown-number" id="seconds-{{id}}">{{remaining.s}}</div>
+                <div class="countdown-label">Seconds</div>
+            </div>
+        </div>
+        {{else if is_expired}}
+        <div>Expired</div>
+        {{/if}}
+        <span>
+            <span>{{ends_at_alias}}: </span><span>{{readable_date ends_at}}</span>
+        </span>
+        <ol>
+            {{#each remedies}}
+            <li>
+                <div class="condition">{{condition}}</div>
+                <div class="statement">{{statement}}
+                    {{#if n}}
+                    <span class="nval">{{n}}</span> <span class="unit">{{unit}}</span>
+                    {{/if}}
+                </div>
+            </li>
+            {{/each}}
+        </ol>
+    {{/each}}
+    {{/unless}}
+    </div>
+</body>
+<script>
+    {{#each this}}
+    {{#if is_ongoing}}
+    const endAt_{{id}} = new Date("{{until}}").getTime();
+    function updateRemainingTime_{{id}} () {
+        const now = new Date().getTime();
+        const timeRemaining = endAt_{{id}} - now;
+
+        const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+
+        document.getElementById("days-{{id}}").innerText = days;
+        document.getElementById("hours-{{id}}").innerText = hours;
+        document.getElementById("minutes-{{id}}").innerText = minutes;
+        document.getElementById("seconds-{{id}}").innerText = seconds;
+    }
+    setInterval(updateRemainingTime_{{id}}, 1000);
+    {{/if}}
+    {{/each}}
+</script>
+</html>
