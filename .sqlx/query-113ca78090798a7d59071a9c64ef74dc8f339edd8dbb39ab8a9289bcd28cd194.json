@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            O.id,\n            O.target,\n            O.penalty,\n            O.starts_at,\n            O.ends_at,\n            O.ends_at_alias,\n            O.created_at,\n            ARRAY_AGG((\n                R.id,\n                R.condition,\n                R.statement,\n                R.n,\n                R.unit,\n                R.created_at\n            )) AS \"remedies: Vec<RemedySchema>\"\n        FROM oath O\n        JOIN remedy R ON R.oath_id = O.id\n        WHERE O.user_id = $1\n        GROUP BY\n            O.id,\n            O.target,\n            O.penalty,\n            O.starts_at,\n            O.ends_at,\n            O.ends_at_alias,\n            O.created_at\n        ORDER BY O.created_at DESC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "target",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "penalty",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "starts_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "ends_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "ends_at_alias",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "remedies: Vec<RemedySchema>",
+        "type_info": "RecordArray"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "113ca78090798a7d59071a9c64ef74dc8f339edd8dbb39ab8a9289bcd28cd194"
+}

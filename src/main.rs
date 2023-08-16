@@ -9,18 +9,17 @@ use actix_web::{
     web::{
         Json as WebJson,
         Path as WebPath,
-        Data,
-        self
+        Data
     },
     middleware::Logger,
     Result as WebResult
 };
 use chrono::{DateTime, NaiveDate, Utc};
 use serde_json::json;
-use sqlx::{FromRow, Pool, Postgres, postgres::PgPoolOptions};
+use sqlx::{FromRow, Pool, Postgres, postgres::PgPoolOptions, migrate};
 use walkdir::WalkDir;
 use dotenv::dotenv;
-use log::debug;
+use log::{debug, info};
 use std::{error::Error, collections::HashMap, io::Result as IOResult, path::PathBuf};
 use html_minifier::minify;
 use serde::{Serialize, Deserialize, Serializer, Deserializer};
@@ -590,6 +589,7 @@ async fn get_all_oaths_for_user(
 
 #[actix_web::main]
 async fn main() -> IOResult<()> {
+    println!("Program starts here");
     dotenv().ok();
 
     let log_level = std::env::var("LOG_LEVEL").unwrap_or(String::from("info"));
@@ -609,11 +609,16 @@ async fn main() -> IOResult<()> {
         .await
     {
         Ok(pool) => {
-            println!("✅Connection to the database is successful!");
+            let migrations = migrate!().run(&pool).await;
+            info!("✅Connection to the database is successful!");
+            match migrations {
+                Ok(()) => info!("✅DB migrations successful!"),
+                Err(e) => info!("❌DB migrations failed: {:?}", e.to_string())
+            }
             pool
         }
         Err(err) => {
-            println!("🔥 Failed to connect to the database: {:?}", err);
+            info!("🔥 Failed to connect to the database: {:?}", err);
             std::process::exit(1);
         }
     };
