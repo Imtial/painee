@@ -1,0 +1,18 @@
+version: '3'
+services:
+  painee:
+    tty: true
+    build:
+      context: .
+    container_name: painee
+    environment:
+      - ENVIRONMENT=production
+      - APP_URL=0.0.0.0
+      - APP_PORT=8080
+      - DATABASE_URL=postgresql://${PG_USER}:${PG_PASS}@${PG_URL}:${PG_PORT:-5432}/painee
+      - LOG_LEVEL=info
+      - TZ=UTC
+    ports:
+      - "12345:8080"
+    restart: unless-stopped
+    command: ./painee
