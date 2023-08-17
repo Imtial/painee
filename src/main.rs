@@ -32,12 +32,13 @@ lazy_static! {
     static ref FILE_CACHE: HashMap<String, String> = initialize_cache().unwrap_or_default();
 }
 
-static UNITS: [&'static str; 5] = [
+static UNITS: [&'static str; 6] = [
     "Times",
     "Rakah",
     "Minutes",
     "Hours",
-    "Days"
+    "Days",
+    "Taka"
 ];
 
 handlebars_helper!(readable_date: |dt: DateTime<Utc>| dt.format("%d %h, %Y %l:%M %p").to_string());
