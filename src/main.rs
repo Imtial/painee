@@ -48,7 +48,8 @@ pub enum Unit {
     Rakah(i32),
     Minutes(i32),
     Hours(i32),
-    Days(i32)
+    Days(i32),
+    Taka(i32)
 }
 impl Unit {
     fn name(&self) -> &str {
@@ -57,7 +58,8 @@ impl Unit {
             Unit::Rakah(_) => "Rakah",
             Unit::Minutes(_) => "Minutes",
             Unit::Hours(_) => "Hours",
-            Unit::Days(_) => "Days"
+            Unit::Days(_) => "Days",
+            Unit::Taka(_) => "Taka"
         }
     }
 }
@@ -70,6 +72,7 @@ impl From<(&String, i32)> for Unit {
             "Minutes" => Unit::Minutes(n),
             "Hours" => Unit::Hours(n),
             "Days" => Unit::Days(n),
+            "Taka" => Unit::Taka(n),
             _ => panic!("Cannot convert to `Unit` enum from {:?}", name)
         }
     }
@@ -182,7 +185,8 @@ impl Serialize for Unit {
             Unit::Rakah(n) => unit_tuple.serialize_element(n),
             Unit::Minutes(n) => unit_tuple.serialize_element(n),
             Unit::Hours(n) => unit_tuple.serialize_element(n),
-            Unit::Days(n) => unit_tuple.serialize_element(n)
+            Unit::Days(n) => unit_tuple.serialize_element(n),
+            Unit::Taka(n) => unit_tuple.serialize_element(n)
         };
         unit_tuple.end()
     }
@@ -213,6 +217,7 @@ impl<'de> Deserialize<'de> for Unit {
             "Minutes" => Ok(Unit::Minutes(amount)),
             "Hours" => Ok(Unit::Hours(amount)),
             "Days" => Ok(Unit::Days(amount)),
+            "Taka" => Ok(Unit::Taka(amount)),
             _ => Err(serde::de::Error::custom("Unknown variant")),
         }
     }
@@ -446,6 +451,7 @@ async fn save_target(
                 Unit::Minutes(n) => n.to_owned(),
                 Unit::Hours(n) => n.to_owned(),
                 Unit::Days(n) => n.to_owned(),
+                Unit::Taka(n) => n.to_owned()
             }
         }))
         .collect();
