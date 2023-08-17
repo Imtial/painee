@@ -164,6 +164,10 @@ select {
     font-size: large;
     font-style: italic;
 }
+.remedy-item {
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
 .condition {
     padding: 6px 10px 6px 10px;
     border: 1px solid purple;

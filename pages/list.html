@@ -51,8 +51,10 @@
                 <div class="countdown-label">Seconds</div>
             </div>
         </div>
-        {{else if is_expired}}
-        <div>Expired</div>
+        {{else}}
+            {{if is_expired}}
+            <div>Expired</div>
+            {{/if}}
         {{/if}}
         <span>
             <span>{{ends_at_alias}}: </span><span>{{readable_date ends_at}}</span>
